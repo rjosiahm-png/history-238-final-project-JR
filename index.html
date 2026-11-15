@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Herald-Bard Correspondence, 1774–1776 | Library of Congress Digital Collections</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Caveat:wght@500&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #202225;
+      font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #222;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 18px 18px 70px;
+    }
+
+    /* Slide Mode Layout */
+    .deck-container {
+      width: 100%;
+      max-width: 1280px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    /* 16:9 Independent Archive Page / Slide */
+    .loc-slide {
+      width: 1280px;
+      height: 720px;
+      background: #ffffff;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.55);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #111;
+    }
+    .loc-slide.active-slide {
+      display: flex;
+    }
+    body.show-all-slides .loc-slide {
+      display: flex;
+      page-break-after: always;
+    }
+
+    /* LOC Top Header */
+    .loc-topbar {
+      background: #f8f9fa;
+      border-bottom: 3px solid #f05123;
+      padding: 8px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .loc-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .loc-logo-box {
+      background: #f05123;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 8px;
+      letter-spacing: 0.8px;
+    }
+    .loc-brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1a1a1a;
+      letter-spacing: 0.3px;
+    }
+    .loc-brand-sub {
+      font-size: 12px;
+      color: #555;
+      border-left: 1px solid #ccc;
+      padding-left: 10px;
+    }
+    .loc-search {
+      display: flex;
+      align-items: center;
+    }
+    .loc-search-select {
+      background: #e9ecef;
+      border: 1px solid #adb5bd;
+      border-right: none;
+      padding: 5px 10px;
+      font-size: 11px;
+      color: #333;
+    }
+    .loc-search-input {
+      border: 1px solid #adb5bd;
+      padding: 5px 12px;
+      font-size: 11px;
+      width: 240px;
+      color: #555;
+      background: #fff;
+    }
+    .loc-search-btn {
+      background: #005ea2;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 12px;
+      border: none;
+    }
+
+    /* Breadcrumb Bar */
+    .loc-breadcrumbs {
+      background: #efefef;
+      padding: 6px 24px;
+      font-size: 11px;
+      color: #005ea2;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .loc-breadcrumbs span.current {
+      color: #444;
+      font-weight: 600;
+    }
+
+    /* Item Title & Navigation Bar */
+    .loc-item-header {
+      padding: 10px 24px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+    }
+    .loc-item-title {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 22px;
+      font-weight: 600;
+      color: #111;
+    }
+    .loc-item-tools {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11.5px;
+      color: #005ea2;
+      font-weight: 600;
+    }
+    .nav-pill {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #005ea2;
+      padding: 4px 10px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+      user-select: none;
+    }
+    .nav-pill:hover {
+      background: #005ea2;
+      color: #fff;
+    }
+    .nav-pill.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* Main Split Content */
+    .loc-main {
+      display: grid;
+      grid-template-columns: 540px 1fr;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Left: IIIF Document Viewer */
+    .loc-viewer {
+      background: #1a1a1a;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #ccc;
+      position: relative;
+      overflow: hidden;
+    }
+    .loc-viewer-toolbar {
+      background: #111;
+      color: #ccc;
+      padding: 6px 14px;
+      font-size: 11px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      z-index: 2;
+    }
+    .loc-viewer-btns button {
+      background: #2c2c2c;
+      color: #eee;
+      padding: 2px 8px;
+      border-radius: 3px;
+      margin-left: 3px;
+      font-family: monospace;
+      font-size: 11px;
+      border: 1px solid #444;
+      cursor: pointer;
+    }
+    .loc-viewer-btns button:hover {
+      background: #444;
+    }
+    .loc-canvas {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 14px;
+      overflow: auto;
+      cursor: pointer;
+      position: relative;
+    }
+    .loc-canvas:hover::after {
+      content: "Click to swap with a custom PNG/JPG file";
+      position: absolute;
+      bottom: 10px;
+      background: rgba(0,0,0,0.82);
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      pointer-events: none;
+    }
+
+    /* Zoom Wrapper */
+    .zoom-target {
+      transition: transform 0.2s ease;
+      transform-origin: center center;
+    }
+
+    /* Parchment Sheet inside Viewer */
+    .parchment-sheet {
+      width: 380px;
+      height: 525px;
+      background: radial-gradient(circle at 30% 25%, #fbf6eb, #efe4ce 65%, #e2d2b5 100%);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.65), inset 0 0 30px rgba(139,109,69,0.22);
+      padding: 28px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      color: #2b231d;
+      position: relative;
+      overflow: hidden;
+    }
+    .font-james {
+      font-family: 'Alex Brush', cursive;
+      font-size: 15.5px;
+      line-height: 1.24;
+    }
+    .font-madison {
+      font-family: 'Caveat', cursive;
+      font-size: 14.5px;
+      line-height: 1.26;
+    }
+    .parchment-date {
+      text-align: right;
+      margin-bottom: 12px;
+    }
+    .parchment-body p {
+      margin-bottom: 10px;
+    }
+    .uploaded-img {
+      max-width: 480px;
+      max-height: 530px;
+      object-fit: contain;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.65);
+    }
+
+    /* Right: Metadata & Transcription Panel */
+    .loc-metadata-pane {
+      padding: 16px 24px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+    .loc-tabs {
+      display: flex;
+      border-bottom: 2px solid #005ea2;
+      gap: 6px;
+    }
+    .loc-tab {
+      padding: 6px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      background: #e9ecef;
+      color: #444;
+      border-radius: 4px 4px 0 0;
+      cursor: pointer;
+      border: none;
+    }
+    .loc-tab.active {
+      background: #005ea2;
+      color: #fff;
+    }
+
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .tab-panel.active {
+      display: flex;
+    }
+
+    /* Catalog Grid */
+    .catalog-grid {
+      display: grid;
+      grid-template-columns: 135px 1fr;
+      row-gap: 5px;
+      column-gap: 12px;
+      font-size: 11.5px;
+      background: #f8f9fa;
+      padding: 10px 14px;
+      border: 1px solid #e2e6ea;
+      border-left: 3px solid #005ea2;
+    }
+    .catalog-label {
+      font-weight: 700;
+      color: #444;
+    }
+    .catalog-value {
+      color: #222;
+    }
+    .catalog-value a {
+      color: #005ea2;
+      text-decoration: none;
+    }
+
+    /* Transcription Box */
+    .transcription-box {
+      border: 1px solid #d8d8d8;
+      background: #fcfcfc;
+      padding: 12px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .transcription-header {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #555;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .transcription-text {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 14.2px;
+      line-height: 1.42;
+      color: #1a1a1a;
+    }
+    .transcription-text p {
+      margin-bottom: 7px;
+    }
+
+    /* Curator Footer Note */
+    .curator-note {
+      background: #eef4f8;
+      border: 1px solid #c9d9e6;
+      padding: 8px 12px;
+      font-size: 11px;
+      line-height: 1.38;
+      color: #1f3a52;
+    }
+    .curator-note strong {
+      color: #0b253c;
+    }
+
+    /* Floating Presenter Bar at Bottom */
+    .presenter-bar {
+      position: fixed;
+      bottom: 14px;
+      background: rgba(17, 24, 39, 0.94);
+      border: 1px solid #374151;
+      color: #f9fafb;
+      padding: 8px 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 100;
+    }
+    .presenter-bar button {
+      background: #374151;
+      color: #e5e7eb;
+      border: 1px solid #4b5563;
+      padding: 5px 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 600;
+    }
+    .presenter-bar button.active-btn {
+      background: #f05123;
+      border-color: #f05123;
+      color: #fff;
+    }
+    .presenter-bar button:hover {
+      background: #4b5563;
+    }
+    .presenter-divider {
+      width: 1px;
+      height: 18px;
+      background: #4b5563;
+      margin: 0 4px;
+    }
+
+    @media print {
+      body { background: none; padding: 0; }
+      .presenter-bar { display: none !important; }
+      .loc-slide { display: flex !important; box-shadow: none; border: none; page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+<input type="file" id="imgUploader" accept="image/*" style="display:none">
+
+<div class="deck-container">
+
+  <!-- ==================== SLIDE 1 ==================== -->
+  <div class="loc-slide active-slide" id="slide-1">
+    <div class="loc-topbar">
+      <div class="loc-brand">
+        <div class="loc-logo-box">LIBRARY OF CONGRESS</div>
+        <div class="loc-brand-title">DIGITAL COLLECTIONS</div>
+        <div class="loc-brand-sub">American Revolution Manuscripts Division</div>
+      </div>
+      <div class="loc-search">
+        <div class="loc-search-select">This Collection &#9662;</div>
+        <div class="loc-search-input">Herald-Bard Correspondence, 1774-1776</div>
+        <button class="loc-search-btn">SEARCH</button>
+      </div>
+    </div>
+
+    <div class="loc-breadcrumbs">
+      <div>loc.gov &raquo; Digital Collections &raquo; Herald-Bard Family Papers, 1774–1776 &raquo; <span class="current">Item 1 of 4</span></div>
+      <div>Repository: Manuscript Division, Washington, D.C.</div>
+    </div>
+
+    <div class="loc-item-header">
+      <div class="loc-item-title">James Herald to Madison Bard, November 14, 1774, Roxbury, Massachusetts [Manuscript]</div>
+      <div class="loc-item-tools">
+        <span class="nav-pill disabled">&laquo; Prev Item</span>
+        <span class="nav-pill" onclick="goToSlide(2)">Next Item (2 of 4) &raquo;</span>
+      </div>
+    </div>
+
+    <div class="loc-main">
+      <div class="loc-viewer">
+        <div class="loc-viewer-toolbar">
+          <span>Image 1 of 1 (Recto) — Original Leaf 20 x 31 cm</span>
+          <div class="loc-viewer-btns">
+            <button onclick="zoomViewer(this, -0.15)">-</button>
+            <button onclick="zoomViewer(this, 0)">100%</button>
+            <button onclick="zoomViewer(this, 0.15)">+</button>
+          </div>
+        </div>
+        <div class="loc-canvas" onclick="triggerUpload(this)" data-default-img="letter1.png">
+          <div class="zoom-target">
+            <div class="parchment-sheet font-james">
+              <div class="parchment-date">Roxbury, Massachusetts<br>November 14, 1774</div>
+              <div class="parchment-body">
+                <p>Dear Madison,</p>
+                <p>You wrote me in September to say that we ought to pay for the drowned tea so the port might open. I thought so before as well. I cannot say so anymore. You have not seen the regiments camped on the Common, or heard their drums going from daybreak into the night. Last Tuesday two grenadiers stopped my wood cart on the Neck and searched through my birch logs as if I hid cannon under the bark. They called me a rebel when my mare shied.</p>
+                <p>The Committee of Inspection forced old Mr. Clarke to lay his ledgers on the tavern table and prove he had bought no English woolens, and the old man cowered and wept. It turned my stomach. But if we do not starve their trade, what is left but to lie down while Lord North takes our charter and puts soldiers on our juries?</p>
+                <p>Write soon.</p>
+                <p>Yours,<br>James</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loc-metadata-pane">
+        <div class="loc-tabs">
+          <button class="loc-tab active" onclick="switchTab(this, 0)">About This Item &amp; Transcription</button>
+          <button class="loc-tab" onclick="switchTab(this, 1)">Archival Provenance</button>
+          <button class="loc-tab" onclick="switchTab(this, 2)">Cite This Item</button>
+        </div>
+
+        <div class="tab-panel active">
+          <div class="catalog-grid">
+            <div class="catalog-label">Contributor Names:</div>
+            <div class="catalog-value">Herald, James, author. | Bard, Madison, recipient.</div>
+            <div class="catalog-label">Created / Published:</div>
+            <div class="catalog-value">Roxbury, Massachusetts, November 14, 1774.</div>
+            <div class="catalog-label">Subject Headings:</div>
+            <div class="catalog-value"><a href="#!">Coercive Acts (1774)</a> — <a href="#!">Boston Port Bill</a> — <a href="#!">Committees of Inspection</a> — <a href="#!">Continental Association</a></div>
+            <div class="catalog-label">Digital ID / Call No.:</div>
+            <div class="catalog-value"><code>mss-hb-17741114-01</code> (Herald-Bard Papers, Box 1, Folder 1)</div>
+          </div>
+
+          <div class="transcription-box">
+            <div>
+              <div class="transcription-header">
+                <span>Diplomatic Transcription (Page 1)</span>
+                <span>Verified by Manuscript Division</span>
+              </div>
+              <div class="transcription-text">
+                <p><strong>[Roxbury, Massachusetts — November 14, 1774]</strong></p>
+                <p>Dear Madison, — You wrote me in September to say that we ought to pay for the drowned tea so the port might open. I thought so before as well. I cannot say so anymore. You have not seen the regiments camped on the Common, or heard their drums going from daybreak into the night. Last Tuesday two grenadiers stopped my wood cart on the Neck and searched through my birch logs as if I hid cannon under the bark. They called me a rebel when my mare shied.</p>
+                <p>The Committee of Inspection forced old Mr. Clarke to lay his ledgers on the tavern table and prove he had bought no English woolens, and the old man cowered and wept. It turned my stomach. But if we do not starve their trade, what is left but to lie down while Lord North takes our charter and puts soldiers on our juries? Write soon. — Yours, James</p>
+              </div>
+            </div>
+            <div class="curator-note">
+              <strong>Curator's Context Note:</strong> Written five months after the Boston Port Act closed Boston Harbor and weeks after the First Continental Congress established the Continental Association (Oct. 1774). Though initially critical of the 1773 tea destruction, Herald is radicalized by British military checkpoints on Boston Neck and the Massachusetts Government Act, even while expressing unease over local Committee of Inspection coercion.
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Archival Provenance &amp; Physical Description:</strong></p>
+              <p>Single-sheet laid paper manuscript folded to form a self-envelope, addressed on verso to <em>"Mr. Madison Bard, Merchant, near Hanover Square, New-York."</em> Carried privately via Hartford post rider to bypass Gen. Thomas Gage's military inspection on Boston Neck.</p>
+              <p><strong>Historical Context:</strong> In the autumn of 1774, implementation of the Coercive Acts (the Boston Port Act and Massachusetts Government Act) coincided with local enforcement of the First Continental Congress's non-importation boycott by parish Committees of Inspection.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Chicago / Turabian Citation:</strong></p>
+              <p>James Herald to Madison Bard, November 14, 1774, Roxbury, Massachusetts. Herald-Bard Family Papers, 1774–1776, Manuscript Division, Library of Congress (HIST 238 Digital Exhibition).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 2 ==================== -->
+  <div class="loc-slide" id="slide-2">
+    <div class="loc-topbar">
+      <div class="loc-brand">
+        <div class="loc-logo-box">LIBRARY OF CONGRESS</div>
+        <div class="loc-brand-title">DIGITAL COLLECTIONS</div>
+        <div class="loc-brand-sub">American Revolution Manuscripts Division</div>
+      </div>
+      <div class="loc-search">
+        <div class="loc-search-select">This Collection &#9662;</div>
+        <div class="loc-search-input">Herald-Bard Correspondence, 1774-1776</div>
+        <button class="loc-search-btn">SEARCH</button>
+      </div>
+    </div>
+
+    <div class="loc-breadcrumbs">
+      <div>loc.gov &raquo; Digital Collections &raquo; Herald-Bard Family Papers, 1774–1776 &raquo; <span class="current">Item 2 of 4</span></div>
+      <div>Repository: Manuscript Division, Washington, D.C.</div>
+    </div>
+
+    <div class="loc-item-header">
+      <div class="loc-item-title">Madison Bard to James Herald, December 8, 1774, New York [Manuscript]</div>
+      <div class="loc-item-tools">
+        <span class="nav-pill" onclick="goToSlide(1)">&laquo; Prev Item (1 of 4)</span>
+        <span class="nav-pill" onclick="goToSlide(3)">Next Item (3 of 4) &raquo;</span>
+      </div>
+    </div>
+
+    <div class="loc-main">
+      <div class="loc-viewer">
+        <div class="loc-viewer-toolbar">
+          <span>Image 1 of 1 (Recto) — Original Leaf 19 x 30 cm</span>
+          <div class="loc-viewer-btns">
+            <button onclick="zoomViewer(this, -0.15)">-</button>
+            <button onclick="zoomViewer(this, 0)">100%</button>
+            <button onclick="zoomViewer(this, 0.15)">+</button>
+          </div>
+        </div>
+        <div class="loc-canvas" onclick="triggerUpload(this)" data-default-img="letter2.png">
+          <div class="zoom-target">
+            <div class="parchment-sheet font-madison">
+              <div class="parchment-date">New York December 8, 1774</div>
+              <div class="parchment-body">
+                <p>Dearest James,</p>
+                <p>Your letter came with the wax cracked. You might be more careful what you trust to post. I must stress I do not defend the Port Bill. If a petition to the King would mend it, I would happily sign my name along yours.</p>
+                <p>One of our Westchester clergymen has been printing pamphlets under the name of a Farmer, and someone slipped one under my door Tuesday night. He asks why any sane man would trade one master three thousand miles across the sea for another in his own town. There is truth in that. The King may be a lesser evil, since he is at a great distance but the committee-men are right outdoors. But I have not signed the Association here. If I sign, the customs house could ruin my father before April. But if I refuse openly, the mechanics talk of tar and rails. So when men ask my mind, I complain of flour prices and hope the conversation changes.</p>
+                <p>Pray Parliament cools its temper by spring.</p>
+                <p>Your Friend,<br>Madison Bard</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loc-metadata-pane">
+        <div class="loc-tabs">
+          <button class="loc-tab active" onclick="switchTab(this, 0)">About This Item &amp; Transcription</button>
+          <button class="loc-tab" onclick="switchTab(this, 1)">Archival Provenance</button>
+          <button class="loc-tab" onclick="switchTab(this, 2)">Cite This Item</button>
+        </div>
+
+        <div class="tab-panel active">
+          <div class="catalog-grid">
+            <div class="catalog-label">Contributor Names:</div>
+            <div class="catalog-value">Bard, Madison, author. | Herald, James, recipient.</div>
+            <div class="catalog-label">Created / Published:</div>
+            <div class="catalog-value">New York, Province of New York, December 8, 1774.</div>
+            <div class="catalog-label">Subject Headings:</div>
+            <div class="catalog-value"><a href="#!">Seabury, Samuel (1729–1796)</a> — <a href="#!">American Loyalists</a> — <a href="#!">New York (N.Y.) — Commerce</a></div>
+            <div class="catalog-label">Digital ID / Call No.:</div>
+            <div class="catalog-value"><code>mss-hb-17741208-02</code> (Herald-Bard Papers, Box 1, Folder 2)</div>
+          </div>
+
+          <div class="transcription-box">
+            <div>
+              <div class="transcription-header">
+                <span>Diplomatic Transcription (Page 1)</span>
+                <span>Verified by Manuscript Division</span>
+              </div>
+              <div class="transcription-text">
+                <p><strong>[New York — December 8, 1774]</strong></p>
+                <p>Dearest James, — Your letter came with the wax cracked. You might be more careful what you trust to post. I must stress I do not defend the Port Bill. If a petition to the King would mend it, I would happily sign my name along yours.</p>
+                <p>One of our Westchester clergymen has been printing pamphlets under the name of a Farmer, and someone slipped one under my door Tuesday night. He asks why any sane man would trade one master three thousand miles across the sea for another in his own town. There is truth in that. The King may be a lesser evil, since he is at a great distance but the committee-men are right outdoors. But I have not signed the Association here. If I sign, the customs house could ruin my father before April. But if I refuse openly, the mechanics talk of tar and rails. So when men ask my mind, I complain of flour prices and hope the conversation changes. Pray Parliament cools its temper by spring. — Your Friend, Madison Bard</p>
+              </div>
+            </div>
+            <div class="curator-note">
+              <strong>Curator's Context Note:</strong> Bard references Anglican clergyman Samuel Seabury's <em>Free Thoughts on the Proceedings of the Continental Congress</em> (dated Nov. 16, 1774, printed in New York under the pseudonym "A. W. Farmer"). The letter illustrates how moderate colonists were caught between Royal customs enforcement and extra-legal Patriot mob pressure.
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Archival Provenance &amp; Physical Description:</strong></p>
+              <p>Single leaf quarto paper written in iron gall ink. Retained in the Herald family papers at Roxbury, Massachusetts.</p>
+              <p><strong>Historical Context:</strong> Samuel Seabury's <em>Free Thoughts</em> articulated a core Loyalist anxiety: that the extra-legal Committees of Inspection created by the Continental Congress replaced constitutional law with arbitrary neighborhood intimidation.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Chicago / Turabian Citation:</strong></p>
+              <p>Madison Bard to James Herald, December 8, 1774, New York. Herald-Bard Family Papers, 1774–1776, Manuscript Division, Library of Congress (HIST 238 Digital Exhibition).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 3 ==================== -->
+  <div class="loc-slide" id="slide-3">
+    <div class="loc-topbar">
+      <div class="loc-brand">
+        <div class="loc-logo-box">LIBRARY OF CONGRESS</div>
+        <div class="loc-brand-title">DIGITAL COLLECTIONS</div>
+        <div class="loc-brand-sub">American Revolution Manuscripts Division</div>
+      </div>
+      <div class="loc-search">
+        <div class="loc-search-select">This Collection &#9662;</div>
+        <div class="loc-search-input">Herald-Bard Correspondence, 1774-1776</div>
+        <button class="loc-search-btn">SEARCH</button>
+      </div>
+    </div>
+
+    <div class="loc-breadcrumbs">
+      <div>loc.gov &raquo; Digital Collections &raquo; Herald-Bard Family Papers, 1774–1776 &raquo; <span class="current">Item 3 of 4</span></div>
+      <div>Repository: Manuscript Division, Washington, D.C.</div>
+    </div>
+
+    <div class="loc-item-header">
+      <div class="loc-item-title">James Herald to Madison Bard, April 21, 1775, Roxbury, Massachusetts [Manuscript]</div>
+      <div class="loc-item-tools">
+        <span class="nav-pill" onclick="goToSlide(2)">&laquo; Prev Item (2 of 4)</span>
+        <span class="nav-pill" onclick="goToSlide(4)">Next Item (4 of 4) &raquo;</span>
+      </div>
+    </div>
+
+    <div class="loc-main">
+      <div class="loc-viewer">
+        <div class="loc-viewer-toolbar">
+          <span>Image 1 of 1 (Recto) — Original Leaf 20 x 31 cm</span>
+          <div class="loc-viewer-btns">
+            <button onclick="zoomViewer(this, -0.15)">-</button>
+            <button onclick="zoomViewer(this, 0)">100%</button>
+            <button onclick="zoomViewer(this, 0.15)">+</button>
+          </div>
+        </div>
+        <div class="loc-canvas" onclick="triggerUpload(this)" data-default-img="letter3.png">
+          <div class="zoom-target">
+            <div class="parchment-sheet font-james">
+              <div class="parchment-date">Roxbury,<br>April 21, 1775</div>
+              <div class="parchment-body">
+                <p>Madison,</p>
+                <p>They have begun. Wednesday before the meeting house bells rang, we heard signal guns across the marshes. Eight hundred Regulars rowed out of Boston to take our powder at Concord, and when they reached Lexington Green, where Captain Parker had sixty militia, the soldiers shot them down. Eight men died on their own common.</p>
+                <p>I took my father’s fowling piece and fled with our parish boys. I never knew what men did to each other in war. There were Redcoats running down the dust of the high road toward Charlestown while our people fired from behind cover. I saw two of my neighbors lying in blood where the flank guard broke the doors in. Do not speak to me again of petitions.</p>
+                <p>Twenty thousand of us have Gage penned inside Boston, and tomorrow I will go to Cambridge to put my name on Colonel Heath’s muster roll. I know your gentle nature, and how you dread disorder, for we have argued it since we were boys. But the roof is burning over our heads. You must choose who your countrymen are.</p>
+                <p style="text-align:right;">James</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loc-metadata-pane">
+        <div class="loc-tabs">
+          <button class="loc-tab active" onclick="switchTab(this, 0)">About This Item &amp; Transcription</button>
+          <button class="loc-tab" onclick="switchTab(this, 1)">Archival Provenance</button>
+          <button class="loc-tab" onclick="switchTab(this, 2)">Cite This Item</button>
+        </div>
+
+        <div class="tab-panel active">
+          <div class="catalog-grid">
+            <div class="catalog-label">Contributor Names:</div>
+            <div class="catalog-value">Herald, James, author. | Bard, Madison, recipient.</div>
+            <div class="catalog-label">Created / Published:</div>
+            <div class="catalog-value">Roxbury, Massachusetts, April 21, 1775.</div>
+            <div class="catalog-label">Subject Headings:</div>
+            <div class="catalog-value"><a href="#!">Lexington, Battle of (1775)</a> — <a href="#!">Concord, Battle of (1775)</a> — <a href="#!">Boston, Siege of (1775–1776)</a></div>
+            <div class="catalog-label">Digital ID / Call No.:</div>
+            <div class="catalog-value"><code>mss-hb-17750421-03</code> (Herald-Bard Papers, Box 1, Folder 3)</div>
+          </div>
+
+          <div class="transcription-box">
+            <div>
+              <div class="transcription-header">
+                <span>Diplomatic Transcription (Page 1)</span>
+                <span>Verified by Manuscript Division</span>
+              </div>
+              <div class="transcription-text">
+                <p><strong>[Roxbury — April 21, 1775]</strong></p>
+                <p>Madison, — They have begun. Wednesday before the meeting house bells rang, we heard signal guns across the marshes. Eight hundred Regulars rowed out of Boston to take our powder at Concord, and when they reached Lexington Green, where Captain Parker had sixty militia, the soldiers shot them down. Eight men died on their own common.</p>
+                <p>I took my father’s fowling piece and fled with our parish boys. I never knew what men did to each other in war. There were Redcoats running down the dust of the high road toward Charlestown while our people fired from behind cover. I saw two of my neighbors lying in blood where the flank guard broke the doors in. Do not speak to me again of petitions.</p>
+                <p>Twenty thousand of us have Gage penned inside Boston, and tomorrow I will go to Cambridge to put my name on Colonel Heath’s muster roll. I know your gentle nature, and how you dread disorder, for we have argued it since we were boys. But the roof is burning over our heads. You must choose who your countrymen are. — James</p>
+              </div>
+            </div>
+            <div class="curator-note">
+              <strong>Curator's Context Note:</strong> Written two days after the Battles of Lexington and Concord (Wednesday, April 19, 1775). Firsthand accounts of British flank guards entering roadside homes along the Battle Road toward Charlestown ended hopes of peaceful petitioning for many New Englanders and prompted Herald's enlistment under Roxbury's Col. William Heath.
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Archival Provenance &amp; Physical Description:</strong></p>
+              <p>Single leaf, stained on lower margin. Dispatched via private drover along the Norwich post road while regular mail service out of Boston was suspended at the start of the Siege of Boston.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Chicago / Turabian Citation:</strong></p>
+              <p>James Herald to Madison Bard, April 21, 1775, Roxbury, Massachusetts. Herald-Bard Family Papers, 1774–1776, Manuscript Division, Library of Congress (HIST 238 Digital Exhibition).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SLIDE 4 ==================== -->
+  <div class="loc-slide" id="slide-4">
+    <div class="loc-topbar">
+      <div class="loc-brand">
+        <div class="loc-logo-box">LIBRARY OF CONGRESS</div>
+        <div class="loc-brand-title">DIGITAL COLLECTIONS</div>
+        <div class="loc-brand-sub">American Revolution Manuscripts Division</div>
+      </div>
+      <div class="loc-search">
+        <div class="loc-search-select">This Collection &#9662;</div>
+        <div class="loc-search-input">Herald-Bard Correspondence, 1774-1776</div>
+        <button class="loc-search-btn">SEARCH</button>
+      </div>
+    </div>
+
+    <div class="loc-breadcrumbs">
+      <div>loc.gov &raquo; Digital Collections &raquo; Herald-Bard Family Papers, 1774–1776 &raquo; <span class="current">Item 4 of 4</span></div>
+      <div>Repository: Manuscript Division, Washington, D.C.</div>
+    </div>
+
+    <div class="loc-item-header">
+      <div class="loc-item-title">Madison Bard to James Herald, February 19, 1776, New York [Manuscript]</div>
+      <div class="loc-item-tools">
+        <span class="nav-pill" onclick="goToSlide(3)">&laquo; Prev Item (3 of 4)</span>
+        <span class="nav-pill disabled">Next Item &raquo;</span>
+      </div>
+    </div>
+
+    <div class="loc-main">
+      <div class="loc-viewer">
+        <div class="loc-viewer-toolbar">
+          <span>Image 1 of 1 (Recto) — Original Leaf 19 x 30 cm</span>
+          <div class="loc-viewer-btns">
+            <button onclick="zoomViewer(this, -0.15)">-</button>
+            <button onclick="zoomViewer(this, 0)">100%</button>
+            <button onclick="zoomViewer(this, 0.15)">+</button>
+          </div>
+        </div>
+        <div class="loc-canvas" onclick="triggerUpload(this)" data-default-img="letter4.png">
+          <div class="zoom-target">
+            <div class="parchment-sheet font-madison">
+              <div class="parchment-date">New York, Feb 19, 1776</div>
+              <div class="parchment-body">
+                <p>Dear James,</p>
+                <p>I read the Common Sense pamphlet you sent. All New York is talking about it. Yesterday at the tavern a man read out the lines about the Royal Brute of Britain, and I lifted my glass with the rest. But mostly because I didn’t know what else I could do. Last week the mob dragged a printer from his bed and stripped him in the snow for speaking against the Congress. This is what I mean. It’s madness. The people are devolving into chaos and disorder.</p>
+                <p>That pamphleteer is mad. He is gambling with the lives of others. Warships are close to our wharves right now, and by May, Lord Howe will land thirty thousand regulars at Sandy Hook. How do we stand a fighting chance? Farmers whose enlistments expire soon, and paper shillings that buy less beef every week. Governor Hutchinson warned that breaking from the Crown leaves us naked to exactly this kind of ruin. If we declare independence and lose, it will not be a tea tax anymore. It will be gibbets at the crossroads and our farms forfeited, if not more.</p>
+                <p>You are my oldest friend. Come home before the fleet sails in and there is no road back.</p>
+                <p style="text-align:right;">Sincerely,<br>Madison</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="loc-metadata-pane">
+        <div class="loc-tabs">
+          <button class="loc-tab active" onclick="switchTab(this, 0)">About This Item &amp; Transcription</button>
+          <button class="loc-tab" onclick="switchTab(this, 1)">Archival Provenance</button>
+          <button class="loc-tab" onclick="switchTab(this, 2)">Cite This Item</button>
+        </div>
+
+        <div class="tab-panel active">
+          <div class="catalog-grid">
+            <div class="catalog-label">Contributor Names:</div>
+            <div class="catalog-value">Bard, Madison, author. | Herald, James, recipient.</div>
+            <div class="catalog-label">Created / Published:</div>
+            <div class="catalog-value">New York, Province of New York, February 19, 1776.</div>
+            <div class="catalog-label">Subject Headings:</div>
+            <div class="catalog-value"><a href="#!">Paine, Thomas — Common Sense (1776)</a> — <a href="#!">Hutchinson, Thomas</a> — <a href="#!">American Loyalists</a></div>
+            <div class="catalog-label">Digital ID / Call No.:</div>
+            <div class="catalog-value"><code>mss-hb-17760219-04</code> (Herald-Bard Papers, Box 1, Folder 4)</div>
+          </div>
+
+          <div class="transcription-box">
+            <div>
+              <div class="transcription-header">
+                <span>Diplomatic Transcription (Page 1)</span>
+                <span>Verified by Manuscript Division</span>
+              </div>
+              <div class="transcription-text">
+                <p><strong>[New York — February 19, 1776]</strong></p>
+                <p>Dear James, — I read the Common Sense pamphlet you sent. All New York is talking about it. Yesterday at the tavern a man read out the lines about the Royal Brute of Britain, and I lifted my glass with the rest. But mostly because I didn’t know what else I could do. Last week the mob dragged a printer from his bed and stripped him in the snow for speaking against the Congress. This is what I mean. It’s madness. The people are devolving into chaos and disorder.</p>
+                <p>That pamphleteer is mad. He is gambling with the lives of others. Warships are close to our wharves right now, and by May, Lord Howe will land thirty thousand regulars at Sandy Hook. How do we stand a fighting chance? Farmers whose enlistments expire soon, and paper shillings that buy less beef every week. Governor Hutchinson warned that breaking from the Crown leaves us naked to exactly this kind of ruin. If we declare independence and lose, it will not be a tea tax anymore. It will be gibbets at the crossroads and our farms forfeited, if not more. You are my oldest friend. Come home before the fleet sails in and there is no road back. — Sincerely, Madison</p>
+              </div>
+            </div>
+            <div class="curator-note">
+              <strong>Curator's Context Note:</strong> Written five weeks after Thomas Paine's <em>Common Sense</em> (Jan. 1776) began circulating. Bard's letter reveals the discrepancy between public Patriot conformity and private Loyalist dread—grounded in fear of overwhelming British naval superiority, economic collapse, and the warnings of former Gov. Thomas Hutchinson.
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Archival Provenance &amp; Physical Description:</strong></p>
+              <p>Final surviving letter in the Herald-Bard correspondence prior to the British invasion of New York in the summer of 1776.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-panel">
+          <div class="transcription-box">
+            <div class="transcription-text">
+              <p><strong>Chicago / Turabian Citation:</strong></p>
+              <p>Madison Bard to James Herald, February 19, 1776, New York. Herald-Bard Family Papers, 1774–1776, Manuscript Division, Library of Congress (HIST 238 Digital Exhibition).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Bottom Presenter Controls -->
+<div class="presenter-bar">
+  <span><strong>Archive Page:</strong></span>
+  <button id="btn-s1" class="active-btn" onclick="goToSlide(1)">1. Nov 14, 1774</button>
+  <button id="btn-s2" onclick="goToSlide(2)">2. Dec 8, 1774</button>
+  <button id="btn-s3" onclick="goToSlide(3)">3. Apr 21, 1775</button>
+  <button id="btn-s4" onclick="goToSlide(4)">4. Feb 19, 1776</button>
+  <div class="presenter-divider"></div>
+  <button id="btn-all" onclick="toggleAllSlides()">View All 4 Stacked</button>
+  <button onclick="window.print()">Print / Save PDF</button>
+</div>
+
+<script>
+  let currentSlide = 1;
+  let showAll = false;
+
+  function goToSlide(num) {
+    showAll = false;
+    document.body.classList.remove('show-all-slides');
+    document.getElementById('btn-all').classList.remove('active-btn');
+    currentSlide = num;
+
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('slide-' + i).classList.toggle('active-slide', i === num);
+      document.getElementById('btn-s' + i).classList.toggle('active-btn', i === num);
+    }
+  }
+
+  function toggleAllSlides() {
+    showAll = !showAll;
+    document.body.classList.toggle('show-all-slides', showAll);
+    document.getElementById('btn-all').classList.toggle('active-btn', showAll);
+  }
+
+  // Keyboard arrow navigation
+  document.addEventListener('keydown', function(e) {
+    if (showAll) return;
+    if (e.key === 'ArrowRight' && currentSlide < 4) goToSlide(currentSlide + 1);
+    if (e.key === 'ArrowLeft' && currentSlide > 1) goToSlide(currentSlide - 1);
+  });
+
+  // Tab switching inside each slide
+  function switchTab(btnEl, tabIndex) {
+    const pane = btnEl.closest('.loc-metadata-pane');
+    const tabs = pane.querySelectorAll('.loc-tab');
+    const panels = pane.querySelectorAll('.tab-panel');
+    tabs.forEach((t, idx) => t.classList.toggle('active', idx === tabIndex));
+    panels.forEach((p, idx) => p.classList.toggle('active', idx === tabIndex));
+  }
+
+  // Zoom controls inside IIIF viewer
+  function zoomViewer(btnEl, delta) {
+    const viewer = btnEl.closest('.loc-viewer');
+    const target = viewer.querySelector('.zoom-target');
+    let currentScale = parseFloat(target.getAttribute('data-scale') || '1');
+    if (delta === 0) {
+      currentScale = 1;
+    } else {
+      currentScale = Math.min(1.6, Math.max(0.6, currentScale + delta));
+    }
+    target.setAttribute('data-scale', currentScale);
+    target.style.transform = 'scale(' + currentScale + ')';
+  }
+
+  // Click-to-upload custom image
+  let activeCanvas = null;
+  const uploader = document.getElementById('imgUploader');
+
+  function triggerUpload(canvasEl) {
+    activeCanvas = canvasEl.querySelector('.zoom-target');
+    uploader.click();
+  }
+
+  uploader.addEventListener('change', function(e) {
+    if (e.target.files && e.target.files[0] && activeCanvas) {
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        activeCanvas.innerHTML = '<img class="uploaded-img" src="' + evt.target.result + '" alt="Uploaded Manuscript">';
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    }
+  });
+
+  // Auto-load letter1.png..letter4.png if placed in the same GitHub repo folder
+  document.querySelectorAll('.loc-canvas[data-default-img]').forEach(canvas => {
+    const fileName = canvas.getAttribute('data-default-img');
+    const probe = new Image();
+    probe.onload = function() {
+      canvas.querySelector('.zoom-target').innerHTML = '<img class="uploaded-img" src="' + fileName + '" alt="Manuscript">';
+    };
+    probe.src = fileName;
+  });
+</script>
+
+</body>
+</html>
